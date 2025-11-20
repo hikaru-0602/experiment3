@@ -3,6 +3,10 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { QuerySet, Answer } from "./types/survey";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 // サンプルデータ（実際は公開データから読み込む）
 const sampleQuerySet: QuerySet = {
@@ -58,7 +62,8 @@ export default function Home() {
     text_50_image_50: { relevance: 0, dominantInfo: null },
     text_0_image_100: { relevance: 0, dominantInfo: null },
   });
-  const [randomizedResultTypes, setRandomizedResultTypes] = useState(resultTypes);
+  const [randomizedResultTypes, setRandomizedResultTypes] =
+    useState(resultTypes);
 
   // クライアント側でのみランダム化を実行（ハイドレーションエラー回避）
   useEffect(() => {
@@ -96,41 +101,41 @@ export default function Home() {
   };
 
   return (
-    <div className="h-screen bg-gray-50 p-4 overflow-hidden">
+    <div className="h-screen bg-background p-4 overflow-hidden">
       <div className="max-w-7xl mx-auto h-full flex flex-col">
         {/* ヘッダー */}
         <div className="mb-3">
-          <h1 className="text-xl font-bold text-gray-900">
-            観光地検索結果アンケート
-          </h1>
-          <p className="text-sm text-gray-600">
+          <h1 className="text-xl font-bold">観光地検索結果アンケート</h1>
+          <p className="text-sm text-muted-foreground">
             クエリセット {querySet.id} / 50
           </p>
         </div>
 
         {/* クエリ表示 */}
-        <div className="bg-white rounded shadow p-3 mb-3">
-          <h2 className="text-sm font-semibold mb-2 text-gray-800">クエリ</h2>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">テキスト:</span>
-              <span className="text-sm font-medium text-gray-900">
-                {querySet.query_text}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-600">画像:</span>
-              <div className="relative w-20 h-20 bg-gray-100 rounded overflow-hidden">
-                <Image
-                  src={querySet.query_image_url}
-                  alt="クエリ画像"
-                  fill
-                  className="object-cover"
-                />
+        <Card className="mb-3">
+          <CardHeader className="p-3 pb-2">
+            <CardTitle className="text-sm">クエリ</CardTitle>
+          </CardHeader>
+          <CardContent className="p-3 pt-0">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">テキスト:</span>
+                <span className="text-sm font-medium">{querySet.query_text}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground">画像:</span>
+                <div className="relative w-20 h-20 bg-muted rounded overflow-hidden">
+                  <Image
+                    src={querySet.query_image_url}
+                    alt="クエリ画像"
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
 
         {/* 検索結果と質問 */}
         <div className="flex-1 grid grid-cols-3 gap-3 overflow-hidden">
@@ -139,17 +144,16 @@ export default function Home() {
             const answer = answers[key];
 
             return (
-              <div
-                key={key}
-                className="bg-white rounded shadow p-3 flex flex-col"
-              >
+              <Card key={key} className="p-3 flex flex-col">
                 {/* 結果情報 */}
                 <div className="flex items-center gap-2 mb-3">
                   <div className="flex-1">
-                    <p className="text-xs text-gray-600">{result.name}</p>
-                    <p className="text-xs text-gray-500">{result.location}</p>
+                    <p className="text-xs text-foreground">{result.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {result.location}
+                    </p>
                   </div>
-                  <div className="relative w-20 h-20 bg-gray-100 rounded shrink-0 overflow-hidden">
+                  <div className="relative w-20 h-20 bg-muted rounded shrink-0 overflow-hidden">
                     <Image
                       src={`/result/${result.id}.jpg`}
                       alt={result.name}
@@ -159,32 +163,37 @@ export default function Home() {
                   </div>
                 </div>
 
-                <hr className="my-2" />
+                <hr className="my-2 border-border" />
 
                 {/* Q1: 関連度 */}
                 <div className="mb-3">
-                  <p className="text-xs font-medium text-gray-900 mb-2">
+                  <Label className="text-xs font-medium mb-2 block">
                     Q1: クエリとの一致度
-                  </p>
-                  <div className="flex gap-2 mb-1">
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <label
-                        key={value}
-                        className="flex items-center cursor-pointer"
-                      >
-                        <input
-                          type="radio"
-                          name={`relevance-${key}`}
-                          value={value}
-                          checked={answer.relevance === value}
-                          onChange={() => handleRelevanceChange(key, value)}
-                          className="mr-1 w-3 h-3"
-                        />
-                        <span className="text-xs text-gray-700">{value}</span>
-                      </label>
-                    ))}
-                  </div>
-                  <div className="flex justify-between text-[10px] text-gray-400">
+                  </Label>
+                  <RadioGroup
+                    value={answer.relevance.toString()}
+                    onValueChange={(value) =>
+                      handleRelevanceChange(key, parseInt(value))
+                    }
+                  >
+                    <div className="flex gap-3 mb-1">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <div key={value} className="flex items-center space-x-1">
+                          <RadioGroupItem
+                            value={value.toString()}
+                            id={`relevance-${key}-${value}`}
+                          />
+                          <Label
+                            htmlFor={`relevance-${key}-${value}`}
+                            className="text-xs cursor-pointer"
+                          >
+                            {value}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  </RadioGroup>
+                  <div className="flex justify-between text-[10px] text-muted-foreground">
                     <span>低</span>
                     <span>高</span>
                   </div>
@@ -192,58 +201,68 @@ export default function Home() {
 
                 {/* Q2: 情報の反映 */}
                 <div>
-                  <p className="text-xs font-medium text-gray-900 mb-2">
+                  <Label className="text-xs font-medium mb-2 block">
                     Q2: 反映されている情報
-                  </p>
-                  <div className="flex flex-col gap-1">
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`dominant-${key}`}
-                        value="text"
-                        checked={answer.dominantInfo === "text"}
-                        onChange={() => handleDominantInfoChange(key, "text")}
-                        className="mr-1 w-3 h-3"
-                      />
-                      <span className="text-xs text-gray-700">テキスト</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`dominant-${key}`}
-                        value="both"
-                        checked={answer.dominantInfo === "both"}
-                        onChange={() => handleDominantInfoChange(key, "both")}
-                        className="mr-1 w-3 h-3"
-                      />
-                      <span className="text-xs text-gray-700">両方同程度</span>
-                    </label>
-                    <label className="flex items-center cursor-pointer">
-                      <input
-                        type="radio"
-                        name={`dominant-${key}`}
-                        value="image"
-                        checked={answer.dominantInfo === "image"}
-                        onChange={() => handleDominantInfoChange(key, "image")}
-                        className="mr-1 w-3 h-3"
-                      />
-                      <span className="text-xs text-gray-700">画像</span>
-                    </label>
-                  </div>
+                  </Label>
+                  <RadioGroup
+                    value={answer.dominantInfo || ""}
+                    onValueChange={(value) =>
+                      handleDominantInfoChange(
+                        key,
+                        value as "text" | "image" | "both"
+                      )
+                    }
+                  >
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="text"
+                          id={`dominant-${key}-text`}
+                        />
+                        <Label
+                          htmlFor={`dominant-${key}-text`}
+                          className="text-xs cursor-pointer"
+                        >
+                          テキスト
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="both"
+                          id={`dominant-${key}-both`}
+                        />
+                        <Label
+                          htmlFor={`dominant-${key}-both`}
+                          className="text-xs cursor-pointer"
+                        >
+                          両方同程度
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="image"
+                          id={`dominant-${key}-image`}
+                        />
+                        <Label
+                          htmlFor={`dominant-${key}-image`}
+                          className="text-xs cursor-pointer"
+                        >
+                          画像
+                        </Label>
+                      </div>
+                    </div>
+                  </RadioGroup>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
 
         {/* 次へボタン */}
         <div className="mt-3 flex justify-center">
-          <button
-            onClick={handleNext}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2 rounded transition-colors"
-          >
+          <Button onClick={handleNext} size="lg">
             次へ
-          </button>
+          </Button>
         </div>
       </div>
     </div>
