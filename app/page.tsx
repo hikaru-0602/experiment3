@@ -20,6 +20,9 @@ const sampleQuerySet: QuerySet = {
     text_similarity: 0.7821022272109985,
     image_similarity: 0.598229169845581,
     integrated_score: 0.7821022272109985,
+    explain: "花がきれい 自然豊か",
+    word: ["そして", "公孫樹", "八雲", "彩る", "一杯", "きれい", "楓", "木々"],
+    caption_ja: "青空に彩る木々のグループ",
   },
   text_50_image_50: {
     id: "46871837265",
@@ -28,6 +31,9 @@ const sampleQuerySet: QuerySet = {
     text_similarity: 0.7706266641616821,
     image_similarity: 0.7692999839782715,
     integrated_score: 0.7699633240699768,
+    explain: "テトラポットが最高 田舎を感じる 海がきれい 奥に見える山が最高",
+    word: ["ジークロス", "海", "奥", "きれい", "山", "丘", "田舎", "ポット"],
+    caption_ja: "丘から海を眺める",
   },
   text_0_image_100: {
     id: "48140966237",
@@ -36,6 +42,9 @@ const sampleQuerySet: QuerySet = {
     text_similarity: 0.7016736268997192,
     image_similarity: 0.8289120197296143,
     integrated_score: 0.8289120197296143,
+    explain: "最高すぎる 海の中の鳥居がきれい 海が綺麗すぎる 自然豊か",
+    word: ["海", "きれい", "鳥居", "綺麗", "登っ", "自然", "味わえる"],
+    caption_ja: "海に設置されたベンチに座っている人",
   },
 };
 
@@ -105,37 +114,32 @@ export default function Home() {
       <div className="max-w-7xl mx-auto h-full flex flex-col">
         {/* ヘッダー */}
         <div className="mb-3">
-          <h1 className="text-xl font-bold">観光地検索結果アンケート</h1>
-          <p className="text-sm text-muted-foreground">
-            クエリセット {querySet.id} / 50
-          </p>
+          <p className="text-sm text-muted-foreground">{querySet.id} / 50</p>
         </div>
 
         {/* クエリ表示 */}
-        <Card className="mb-3">
-          <CardHeader className="p-3 pb-2">
-            <CardTitle className="text-sm">クエリ</CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 pt-0">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">テキスト:</span>
-                <span className="text-sm font-medium">{querySet.query_text}</span>
+        <div className="flex items-center gap-8 justify-center pb-4">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <span className="text-4xl font-medium">クエリ：</span>
+            </div>
+            <div className="bg-muted flex flex-row items-center gap-6 p-3 rounded-2xl">
+              <div className="relative w-24 h-24 bg-muted rounded overflow-hidden">
+                <Image
+                  src={querySet.query_image_url}
+                  alt="クエリ画像"
+                  fill
+                  className="object-cover"
+                />
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">画像:</span>
-                <div className="relative w-20 h-20 bg-muted rounded overflow-hidden">
-                  <Image
-                    src={querySet.query_image_url}
-                    alt="クエリ画像"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
+              <div className="justify-center items-center">
+                <span className="text-4xl font-medium">
+                  ＋「{querySet.query_text}」
+                </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* 検索結果と質問 */}
         <div className="flex-1 grid grid-cols-3 gap-3 overflow-hidden">
@@ -144,31 +148,40 @@ export default function Home() {
             const answer = answers[key];
 
             return (
-              <Card key={key} className="p-3 flex flex-col">
+              <Card key={key} className="p-5 flex flex-col overflow-y-auto">
                 {/* 結果情報 */}
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="flex-1">
-                    <p className="text-xs text-foreground">{result.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {result.location}
-                    </p>
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <div className="relative w-24 h-24 bg-muted rounded shrink-0 overflow-hidden">
+                      <Image
+                        src={`/result/${result.id}.jpg`}
+                        alt={result.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xl font-semibold text-foreground">
+                        {result.name}
+                      </p>
+                      <p className="text-ml text-muted-foreground">
+                        {result.location}
+                      </p>
+                    </div>
                   </div>
-                  <div className="relative w-20 h-20 bg-muted rounded shrink-0 overflow-hidden">
-                    <Image
-                      src={`/result/${result.id}.jpg`}
-                      alt={result.name}
-                      fill
-                      className="object-cover"
-                    />
+                  <div className="mb-3">
+                    <div>
+                      <p className="text-ml font-semibold text-foreground">
+                        {result.caption_ja}
+                      </p>
+                    </div>
                   </div>
                 </div>
 
-                <hr className="my-2 border-border" />
-
                 {/* Q1: 関連度 */}
-                <div className="mb-3">
-                  <Label className="text-xs font-medium mb-2 block">
-                    Q1: クエリとの一致度
+                <div className="mb-3 pt-3">
+                  <Label className="text-ml font-medium mb-4 block">
+                    Q1: クエリとどの程度一致していると思いますか？
                   </Label>
                   <RadioGroup
                     value={answer.relevance.toString()}
@@ -176,12 +189,16 @@ export default function Home() {
                       handleRelevanceChange(key, parseInt(value))
                     }
                   >
-                    <div className="flex gap-3 mb-1">
+                    <div className="flex justify-between mb-1">
                       {[1, 2, 3, 4, 5].map((value) => (
-                        <div key={value} className="flex items-center space-x-1">
+                        <div
+                          key={value}
+                          className="flex items-center space-x-1"
+                        >
                           <RadioGroupItem
                             value={value.toString()}
                             id={`relevance-${key}-${value}`}
+                            className="size-6"
                           />
                           <Label
                             htmlFor={`relevance-${key}-${value}`}
@@ -193,16 +210,16 @@ export default function Home() {
                       ))}
                     </div>
                   </RadioGroup>
-                  <div className="flex justify-between text-[10px] text-muted-foreground">
-                    <span>低</span>
-                    <span>高</span>
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>全く一致していない</span>
+                    <span>かなり一致している</span>
                   </div>
                 </div>
 
                 {/* Q2: 情報の反映 */}
                 <div>
-                  <Label className="text-xs font-medium mb-2 block">
-                    Q2: 反映されている情報
+                  <Label className="text-ml font-medium mb-4 block">
+                    Q2: どの割合で統合した結果だと思いますか？
                   </Label>
                   <RadioGroup
                     value={answer.dominantInfo || ""}
@@ -213,41 +230,44 @@ export default function Home() {
                       )
                     }
                   >
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-4">
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem
                           value="text"
                           id={`dominant-${key}-text`}
+                          className="size-5"
                         />
                         <Label
                           htmlFor={`dominant-${key}-text`}
-                          className="text-xs cursor-pointer"
+                          className="text-ml cursor-pointer"
                         >
-                          テキスト
+                          テキストのみ
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem
                           value="both"
                           id={`dominant-${key}-both`}
+                          className="size-5"
                         />
                         <Label
                           htmlFor={`dominant-${key}-both`}
-                          className="text-xs cursor-pointer"
+                          className="text-ml cursor-pointer"
                         >
-                          両方同程度
+                          1：1 で統合
                         </Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <RadioGroupItem
                           value="image"
                           id={`dominant-${key}-image`}
+                          className="size-5"
                         />
                         <Label
                           htmlFor={`dominant-${key}-image`}
-                          className="text-xs cursor-pointer"
+                          className="text-ml cursor-pointer"
                         >
-                          画像
+                          画像のみ
                         </Label>
                       </div>
                     </div>

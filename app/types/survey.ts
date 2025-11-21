@@ -5,6 +5,9 @@ export interface SearchResult {
   text_similarity: number;
   image_similarity: number;
   integrated_score: number;
+  explain: string;
+  word: string[];
+  caption_ja: string;
 }
 
 export interface QuerySet {
@@ -16,7 +19,7 @@ export interface QuerySet {
   text_0_image_100: SearchResult;
 }
 
-export interface BatchSearchResults {
+export interface MergedResults {
   results: QuerySet[];
 }
 
