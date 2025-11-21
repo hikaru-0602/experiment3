@@ -8,28 +8,21 @@ export interface SearchResult {
   explain: string;
   word: string[];
   caption_ja: string;
+  ratio: number; // 0: テキストのみ, 1: 統合, 2: 画像のみ
 }
 
 export interface QuerySet {
   id: number;
   query_text: string;
   query_image_url: string;
-  text_100_image_0: SearchResult;
-  text_50_image_50: SearchResult;
-  text_0_image_100: SearchResult;
+  result: SearchResult[]; // 3つの結果を含む配列（既にシャッフル済み）
 }
 
-export interface MergedResults {
+export interface Results {
   results: QuerySet[];
 }
 
 export interface Answer {
   relevance: number; // Q1: 1-5
   dominantInfo: 'text' | 'image' | 'both' | null; // Q2
-}
-
-export interface ResultAnswer {
-  text_100_image_0: Answer;
-  text_50_image_50: Answer;
-  text_0_image_100: Answer;
 }
