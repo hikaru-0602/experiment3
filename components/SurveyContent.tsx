@@ -14,11 +14,11 @@ export default function SurveyContent() {
   const [allQuerySets, setAllQuerySets] = useState<QuerySet[]>([]);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<Record<number, Answer>>({
-    0: { relevance: 0, dominantInfo: null },
-    1: { relevance: 0, dominantInfo: null },
-    2: { relevance: 0, dominantInfo: null },
-    3: { relevance: 0, dominantInfo: null },
-    4: { relevance: 0, dominantInfo: null },
+    0: { relevance: 0, dominantInfo: 0 },
+    1: { relevance: 0, dominantInfo: 0 },
+    2: { relevance: 0, dominantInfo: 0 },
+    3: { relevance: 0, dominantInfo: 0 },
+    4: { relevance: 0, dominantInfo: 0 },
   });
 
   const handleRelevanceChange = useCallback((index: number, value: number) => {
@@ -29,7 +29,7 @@ export default function SurveyContent() {
   }, []);
 
   const handleDominantInfoChange = useCallback(
-    (index: number, value: "text" | "image" | "both") => {
+    (index: number, value: number) => {
       setAnswers((prev) => ({
         ...prev,
         [index]: { ...prev[index], dominantInfo: value },
@@ -45,11 +45,11 @@ export default function SurveyContent() {
       setCurrentCardIndex(0); // カードインデックスをリセット
       // 回答をリセット
       setAnswers({
-        0: { relevance: 0, dominantInfo: null },
-        1: { relevance: 0, dominantInfo: null },
-        2: { relevance: 0, dominantInfo: null },
-        3: { relevance: 0, dominantInfo: null },
-        4: { relevance: 0, dominantInfo: null },
+        0: { relevance: 0, dominantInfo: 0 },
+        1: { relevance: 0, dominantInfo: 0 },
+        2: { relevance: 0, dominantInfo: 0 },
+        3: { relevance: 0, dominantInfo: 0 },
+        4: { relevance: 0, dominantInfo: 0 },
       });
     } else {
       // 全て完了
@@ -64,11 +64,11 @@ export default function SurveyContent() {
       setCurrentCardIndex(0); // カードインデックスをリセット
       // 回答をリセット
       setAnswers({
-        0: { relevance: 0, dominantInfo: null },
-        1: { relevance: 0, dominantInfo: null },
-        2: { relevance: 0, dominantInfo: null },
-        3: { relevance: 0, dominantInfo: null },
-        4: { relevance: 0, dominantInfo: null },
+        0: { relevance: 0, dominantInfo: 0 },
+        1: { relevance: 0, dominantInfo: 0 },
+        2: { relevance: 0, dominantInfo: 0 },
+        3: { relevance: 0, dominantInfo: 0 },
+        4: { relevance: 0, dominantInfo: 0 },
       });
     }
   }, [currentQueryIndex]);
@@ -191,10 +191,13 @@ export default function SurveyContent() {
           {/* 検索結果と質問 */}
           <div className="w-[60%] flex flex-col gap-4">
             {/* ヘッダー行 */}
-            <div className="grid grid-cols-[2fr_1fr] gap-4 pb-2">
+            <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 pb-2">
               <div className="font-medium text-lg"></div>
               <div className="font-medium text-lg text-center">
                 Q1: クエリとどの程度一致していると思いますか？
+              </div>
+              <div className="font-medium text-lg text-center">
+                Q2: どの割合で統合した結果だと思いますか？
               </div>
             </div>
 
@@ -206,7 +209,7 @@ export default function SurveyContent() {
                 return (
                   <div
                     key={index}
-                    className={`grid grid-cols-[2fr_1fr] gap-4 p-3 rounded-lg transition-all border-2 ${
+                    className={`grid grid-cols-[2fr_1fr_1fr] gap-4 p-3 rounded-lg transition-all border-2 ${
                       currentCardIndex === index
                         ? "border-primary bg-primary/5"
                         : "border-transparent"
@@ -264,6 +267,41 @@ export default function SurveyContent() {
                       <div className="flex justify-between text-xs text-muted-foreground w-full px-1">
                         <span>低</span>
                         <span>高</span>
+                      </div>
+                    </div>
+
+                    {/* Q2回答欄 */}
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <RadioGroup
+                        value={answer.dominantInfo.toString()}
+                        onValueChange={(value) =>
+                          handleDominantInfoChange(index, parseInt(value))
+                        }
+                      >
+                        <div className="flex gap-3">
+                          {[1, 2, 3, 4, 5].map((value) => (
+                            <div
+                              key={value}
+                              className="flex flex-col items-center gap-1"
+                            >
+                              <RadioGroupItem
+                                value={value.toString()}
+                                id={`dominant-${index}-${value}`}
+                                className="size-5"
+                              />
+                              <Label
+                                htmlFor={`dominant-${index}-${value}`}
+                                className="text-xs cursor-pointer"
+                              >
+                                {value}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </RadioGroup>
+                      <div className="flex justify-between text-xs text-muted-foreground w-full px-1">
+                        <span>テキスト</span>
+                        <span>画像</span>
                       </div>
                     </div>
                   </div>

@@ -24,5 +24,5 @@ export interface Results {
 
 export interface Answer {
   relevance: number; // Q1: 1-5
-  dominantInfo: 'text' | 'image' | 'both' | null; // Q2
+  dominantInfo: number; // Q2: 1-5 (1: テキストのみ, 3: 1:1で統合, 5: 画像のみ)
 }
