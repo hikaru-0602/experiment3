@@ -189,22 +189,31 @@ export default function SurveyContent() {
           </div>
 
           {/* 検索結果と質問 */}
-          <div className="grid grid-rows-5 gap-3 w-[60%]">
-            {querySet.result.map((result, index) => {
-              const answer = answers[index];
+          <div className="w-[60%] flex flex-col gap-4">
+            {/* ヘッダー行 */}
+            <div className="grid grid-cols-[2fr_1fr] gap-4 pb-2">
+              <div className="font-medium text-lg"></div>
+              <div className="font-medium text-lg text-center">
+                Q1: クエリとどの程度一致していると思いますか？
+              </div>
+            </div>
 
-              return (
-                <Card
-                  key={index}
-                  className={`p-3 flex flex-row justify-between h-full transition-all border-2 ${
-                    currentCardIndex === index
-                      ? "border-primary"
-                      : "border-transparent"
-                  }`}
-                >
-                  {/* 結果情報 */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex items-center gap-2">
+            {/* データ行 */}
+            <div className="flex flex-col gap-3">
+              {querySet.result.map((result, index) => {
+                const answer = answers[index];
+
+                return (
+                  <div
+                    key={index}
+                    className={`grid grid-cols-[2fr_1fr] gap-4 p-3 rounded-lg transition-all border-2 ${
+                      currentCardIndex === index
+                        ? "border-primary bg-primary/5"
+                        : "border-transparent"
+                    }`}
+                  >
+                    {/* 結果情報 */}
+                    <div className="flex items-center gap-3">
                       <div className="relative w-24 h-24 bg-muted rounded shrink-0 overflow-hidden">
                         <Image
                           src={`/result/${result.id}.jpg`}
@@ -213,117 +222,54 @@ export default function SurveyContent() {
                           className="object-cover"
                         />
                       </div>
-                      <div className="flex-1">
-                        <p className="text-xl font-semibold text-foreground">
+                      <div>
+                        <p className="text-lg font-semibold text-foreground">
                           {result.name}
                         </p>
-                        <p className="text-ml text-muted-foreground">
+                        <p className="text-sm text-muted-foreground">
                           {result.location}
                         </p>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Q1: 関連度 */}
-                  <div className="mb-3 pt-3">
-                    <Label className="text-ml font-medium mb-4 block">
-                      Q1: クエリとどの程度一致していると思いますか？
-                    </Label>
-                    <RadioGroup
-                      value={answer.relevance.toString()}
-                      onValueChange={(value) =>
-                        handleRelevanceChange(index, parseInt(value))
-                      }
-                    >
-                      <div className="flex justify-between mb-1">
-                        {[1, 2, 3, 4, 5].map((value) => (
-                          <div
-                            key={value}
-                            className="flex items-center space-x-1"
-                          >
-                            <RadioGroupItem
-                              value={value.toString()}
-                              id={`relevance-${index}-${value}`}
-                              className="size-6"
-                            />
-                            <Label
-                              htmlFor={`relevance-${index}-${value}`}
-                              className="text-xs cursor-pointer"
+                    {/* Q1回答欄 */}
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <RadioGroup
+                        value={answer.relevance.toString()}
+                        onValueChange={(value) =>
+                          handleRelevanceChange(index, parseInt(value))
+                        }
+                      >
+                        <div className="flex gap-3">
+                          {[1, 2, 3, 4, 5].map((value) => (
+                            <div
+                              key={value}
+                              className="flex flex-col items-center gap-1"
                             >
-                              {value}
-                            </Label>
-                          </div>
-                        ))}
+                              <RadioGroupItem
+                                value={value.toString()}
+                                id={`relevance-${index}-${value}`}
+                                className="size-5"
+                              />
+                              <Label
+                                htmlFor={`relevance-${index}-${value}`}
+                                className="text-xs cursor-pointer"
+                              >
+                                {value}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      </RadioGroup>
+                      <div className="flex justify-between text-xs text-muted-foreground w-full px-1">
+                        <span>低</span>
+                        <span>高</span>
                       </div>
-                    </RadioGroup>
-                    <div className="flex justify-between text-sm text-foreground">
-                      <span>全く一致していない</span>
-                      <span>かなり一致している</span>
                     </div>
                   </div>
-
-                  {/* Q2: 情報の反映 */}
-                  {/*
-                  <div>
-                    <Label className="text-ml font-medium mb-4 block">
-                      Q2: どの割合で統合した結果だと思いますか？
-                    </Label>
-                    <RadioGroup
-                      value={answer.dominantInfo || ""}
-                      onValueChange={(value) =>
-                        handleDominantInfoChange(
-                          index,
-                          value as "text" | "image" | "both"
-                        )
-                      }
-                    >
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="text"
-                            id={`dominant-${index}-text`}
-                            className="size-6"
-                          />
-                          <Label
-                            htmlFor={`dominant-${index}-text`}
-                            className="text-ml cursor-pointer"
-                          >
-                            テキストのみ
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="both"
-                            id={`dominant-${index}-both`}
-                            className="size-6"
-                          />
-                          <Label
-                            htmlFor={`dominant-${index}-both`}
-                            className="text-ml cursor-pointer"
-                          >
-                            1：1 で統合
-                          </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value="image"
-                            id={`dominant-${index}-image`}
-                            className="size-6"
-                          />
-                          <Label
-                            htmlFor={`dominant-${index}-image`}
-                            className="text-ml cursor-pointer"
-                          >
-                            画像のみ
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
-                  </div>
-                  */}
-                </Card>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
       </div>
