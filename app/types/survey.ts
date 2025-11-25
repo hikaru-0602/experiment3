@@ -15,7 +15,7 @@ export interface QuerySet {
   id: number;
   query_text: string;
   query_image_url: string;
-  result: SearchResult[]; // 3つの結果を含む配列（既にシャッフル済み）
+  result: SearchResult[]; // 5つの結果を含む配列（既にシャッフル済み）
 }
 
 export interface Results {

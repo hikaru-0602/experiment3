@@ -16,11 +16,13 @@ export default function SurveyContent() {
     0: { relevance: 0, dominantInfo: null },
     1: { relevance: 0, dominantInfo: null },
     2: { relevance: 0, dominantInfo: null },
+    3: { relevance: 0, dominantInfo: null },
+    4: { relevance: 0, dominantInfo: null },
   });
 
-  // results.jsonを読み込む
+  // final_results.jsonを読み込む
   useEffect(() => {
-    fetch("/results.json")
+    fetch("/final_results.json")
       .then((response) => response.json())
       .then((data: Results) => {
         setAllQuerySets(data.results);
@@ -76,6 +78,8 @@ export default function SurveyContent() {
         0: { relevance: 0, dominantInfo: null },
         1: { relevance: 0, dominantInfo: null },
         2: { relevance: 0, dominantInfo: null },
+        3: { relevance: 0, dominantInfo: null },
+        4: { relevance: 0, dominantInfo: null },
       });
     } else {
       // 全て完了
@@ -120,7 +124,7 @@ export default function SurveyContent() {
         </div>
 
         {/* 検索結果と質問 */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {querySet.result.map((result, index) => {
             const answer = answers[index];
 
