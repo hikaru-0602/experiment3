@@ -100,13 +100,10 @@ export default function SurveyContent() {
         </div>
 
         {/* クエリ表示 */}
-        <div className="flex flex-row gap-4">
-          <div className="flex gap-8 justify-start items-start pb-4">
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <span className="text-4xl font-medium">クエリ：</span>
-              </div>
-              <div className="bg-muted flex flex-row items-center gap-6 p-3 rounded-2xl">
+        <div className="flex flex-row gap-16">
+          <div className="flex justify-center items-start pb-4 w-[20%]">
+            <div className="flex items-center w-full">
+              <div className="flex flex-col items-center gap-6 p-3 rounded-2xl w-full">
                 <div className="relative w-24 h-24 bg-muted rounded overflow-hidden">
                   <Image
                     src={querySet.query_image_url}
@@ -115,9 +112,9 @@ export default function SurveyContent() {
                     className="object-cover"
                   />
                 </div>
-                <div className="justify-center items-center">
-                  <span className="text-4xl font-medium">
-                    ＋「{querySet.query_text}」
+                <div className="bg-muted flex justify-center items-center w-[80%]">
+                  <span className="text-2xl font-medium text-center">
+                    {querySet.query_text}
                   </span>
                 </div>
               </div>
@@ -125,7 +122,7 @@ export default function SurveyContent() {
           </div>
 
           {/* 検索結果と質問 */}
-          <div className="grid grid-rows-5 gap-3">
+          <div className="grid grid-rows-5 gap-3 w-[60%]">
             {querySet.result.map((result, index) => {
               const answer = answers[index];
 
