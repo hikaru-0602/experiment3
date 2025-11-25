@@ -100,8 +100,8 @@ export default function SurveyContent() {
         </div>
 
         {/* クエリ表示 */}
-        <div className="flex flex-row">
-          <div className="flex items-center gap-8 justify-center pb-4">
+        <div className="flex flex-row gap-4">
+          <div className="flex gap-8 justify-start items-start pb-4">
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <span className="text-4xl font-medium">クエリ：</span>
@@ -130,7 +130,10 @@ export default function SurveyContent() {
               const answer = answers[index];
 
               return (
-                <Card key={index} className="p-5 flex flex-row h-fit">
+                <Card
+                  key={index}
+                  className="p-3 flex flex-row justify-between h-full"
+                >
                   {/* 結果情報 */}
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-2">
