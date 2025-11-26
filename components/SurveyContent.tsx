@@ -2,10 +2,17 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
-import { QuerySet, Answer, Results } from "@/app/types/survey";
+import {
+  QuerySet,
+  Answer,
+  Results,
+  SurveyData,
+  QuerySetResult,
+} from "@/app/types/survey";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export default function SurveyContent() {
   const [currentQueryIndex, setCurrentQueryIndex] = useState(0);
@@ -20,6 +27,13 @@ export default function SurveyContent() {
     3: { relevance: 0, dominantInfo: 0 },
     4: { relevance: 0, dominantInfo: 0 },
   });
+  const [surveyData, setSurveyData] = useState<SurveyData>({
+    timestamp: new Date().toISOString(),
+    querySets: [],
+  });
+  const [isCompleted, setIsCompleted] = useState(false); // 全完了フラグ
+  const [userId, setUserId] = useState(""); // ユーザーID
+  const [isTransitioning, setIsTransitioning] = useState(false); // 遷移中フラグ
 
   const handleRelevanceChange = useCallback((index: number, value: number) => {
     setAnswers((prev) => ({
@@ -38,25 +52,102 @@ export default function SurveyContent() {
     []
   );
 
-  const handleNext = useCallback(() => {
-    // 次のクエリセットに進む
-    if (currentQueryIndex < allQuerySets.length - 1) {
-      setCurrentQueryIndex((prev) => prev + 1);
-      setCurrentCardIndex(0); // カードインデックスをリセット
-      setCurrentQuestion("Q1"); // Q1から開始
-      // 回答をリセット
-      setAnswers({
-        0: { relevance: 0, dominantInfo: 0 },
-        1: { relevance: 0, dominantInfo: 0 },
-        2: { relevance: 0, dominantInfo: 0 },
-        3: { relevance: 0, dominantInfo: 0 },
-        4: { relevance: 0, dominantInfo: 0 },
-      });
-    } else {
-      // 全て完了
-      alert("アンケートが完了しました！ご協力ありがとうございました。");
-    }
-  }, [currentQueryIndex, allQuerySets.length]);
+  const handleNext = useCallback(
+    (lastAnswers?: Record<number, Answer>) => {
+      // 現在のクエリセットのIDを取得
+      const currentQuerySet = allQuerySets[currentQueryIndex];
+      if (!currentQuerySet) return;
+
+      // 最新の回答を使用（引数で渡された場合はそれを使用）
+      const answersToSave = lastAnswers || answers;
+
+      // answersToSaveが正しい形式でない場合は初期値を使用
+      const getAnswer = (index: number): Answer => {
+        return answersToSave[index] || { relevance: 0, dominantInfo: 0 };
+      };
+
+      // 現在のクエリセットの回答を保存
+      const querySetResult: QuerySetResult = {
+        querySetId: currentQuerySet.id, // final_results.jsonのIDを使用
+        q1Answers: [
+          getAnswer(0).relevance,
+          getAnswer(1).relevance,
+          getAnswer(2).relevance,
+          getAnswer(3).relevance,
+          getAnswer(4).relevance,
+        ],
+        q2Answers: [
+          getAnswer(0).dominantInfo,
+          getAnswer(1).dominantInfo,
+          getAnswer(2).dominantInfo,
+          getAnswer(3).dominantInfo,
+          getAnswer(4).dominantInfo,
+        ],
+      };
+
+      // 同じquerySetIdが既に存在する場合は上書き、なければ追加
+      const existingIndex = surveyData.querySets.findIndex(
+        (qs) => qs.querySetId === querySetResult.querySetId
+      );
+
+      let updatedQuerySets;
+      if (existingIndex !== -1) {
+        // 既存のデータを上書き
+        updatedQuerySets = [...surveyData.querySets];
+        updatedQuerySets[existingIndex] = querySetResult;
+      } else {
+        // 新規追加
+        updatedQuerySets = [...surveyData.querySets, querySetResult];
+      }
+
+      const updatedSurveyData = {
+        ...surveyData,
+        querySets: updatedQuerySets,
+      };
+
+      // 同期的に保存処理を実行
+      try {
+        // 遷移中フラグを立てる
+        setIsTransitioning(true);
+
+        // stateを更新
+        setSurveyData(updatedSurveyData);
+
+        // ローカルストレージに自動保存（同期処理）
+        localStorage.setItem(
+          "survey_incomplete",
+          JSON.stringify(updatedSurveyData)
+        );
+
+        // 保存完了後に次のクエリセットに進む
+        if (currentQueryIndex < allQuerySets.length - 1) {
+          setCurrentQueryIndex((prev) => prev + 1);
+          setCurrentCardIndex(0); // カードインデックスをリセット
+          setCurrentQuestion("Q1"); // Q1から開始
+          // 回答をリセット
+          setAnswers({
+            0: { relevance: 0, dominantInfo: 0 },
+            1: { relevance: 0, dominantInfo: 0 },
+            2: { relevance: 0, dominantInfo: 0 },
+            3: { relevance: 0, dominantInfo: 0 },
+            4: { relevance: 0, dominantInfo: 0 },
+          });
+
+          // 500ms後にキーボード入力を再開
+          setTimeout(() => setIsTransitioning(false), 500);
+        } else {
+          // 全て完了
+          setIsCompleted(true);
+          setIsTransitioning(false);
+        }
+      } catch (error) {
+        console.error("保存エラー:", error);
+        alert("保存に失敗しました。もう一度お試しください。");
+        setIsTransitioning(false);
+      }
+    },
+    [currentQueryIndex, allQuerySets, answers, surveyData]
+  );
 
   const handlePrevious = useCallback(() => {
     // 前のクエリセットに戻る
@@ -75,6 +166,21 @@ export default function SurveyContent() {
     }
   }, [currentQueryIndex]);
 
+  const handleFinalSave = useCallback(() => {
+    if (!userId.trim()) {
+      alert("ユーザーIDを入力してください");
+      return;
+    }
+
+    // 最終保存
+    localStorage.setItem(`survey_${userId}`, JSON.stringify(surveyData));
+
+    // 未完了データを削除
+    localStorage.removeItem("survey_incomplete");
+
+    alert("保存が完了しました！ご協力ありがとうございました。");
+  }, [userId, surveyData]);
+
   // final_results.jsonを読み込む
   useEffect(() => {
     fetch("/final_results.json")
@@ -89,11 +195,75 @@ export default function SurveyContent() {
       });
   }, []);
 
+  // 起動時に未完了データを読み込む
+  useEffect(() => {
+    const savedData = localStorage.getItem("survey_incomplete");
+    if (savedData) {
+      try {
+        const parsedData: SurveyData = JSON.parse(savedData);
+        setSurveyData(parsedData);
+        // 次に回答するクエリセットのインデックスを設定
+        setCurrentQueryIndex(parsedData.querySets.length);
+      } catch (error) {
+        console.error("Error loading saved data:", error);
+      }
+    }
+  }, []);
+
+  // currentQueryIndexが変わったときに、保存済みの回答を復元
+  useEffect(() => {
+    if (!allQuerySets.length || !allQuerySets[currentQueryIndex]) return;
+
+    const currentQuerySetId = allQuerySets[currentQueryIndex].id;
+    const savedQuerySet = surveyData.querySets.find(
+      (qs) => qs.querySetId === currentQuerySetId
+    );
+
+    if (savedQuerySet) {
+      // 保存済みの回答を復元
+      setAnswers({
+        0: {
+          relevance: savedQuerySet.q1Answers[0] || 0,
+          dominantInfo: savedQuerySet.q2Answers[0] || 0,
+        },
+        1: {
+          relevance: savedQuerySet.q1Answers[1] || 0,
+          dominantInfo: savedQuerySet.q2Answers[1] || 0,
+        },
+        2: {
+          relevance: savedQuerySet.q1Answers[2] || 0,
+          dominantInfo: savedQuerySet.q2Answers[2] || 0,
+        },
+        3: {
+          relevance: savedQuerySet.q1Answers[3] || 0,
+          dominantInfo: savedQuerySet.q2Answers[3] || 0,
+        },
+        4: {
+          relevance: savedQuerySet.q1Answers[4] || 0,
+          dominantInfo: savedQuerySet.q2Answers[4] || 0,
+        },
+      });
+    } else {
+      // 保存済みデータがない場合は初期化
+      setAnswers({
+        0: { relevance: 0, dominantInfo: 0 },
+        1: { relevance: 0, dominantInfo: 0 },
+        2: { relevance: 0, dominantInfo: 0 },
+        3: { relevance: 0, dominantInfo: 0 },
+        4: { relevance: 0, dominantInfo: 0 },
+      });
+    }
+  }, [currentQueryIndex, allQuerySets, surveyData.querySets]);
+
   // キーボードイベントリスナー
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // 1〜5の数字キー
-      if (e.key >= "1" && e.key <= "4") {
+      // 遷移中は入力を受け付けない
+      if (isTransitioning) return;
+
+      // 1〜4の数字キー（Q1）、または1〜5の数字キー（Q2）
+      const maxKey = currentQuestion === "Q1" ? "4" : "5";
+      if (e.key >= "1" && e.key <= maxKey) {
         const value = parseInt(e.key);
 
         if (currentQuestion === "Q1") {
@@ -119,7 +289,18 @@ export default function SurveyContent() {
             // Q2のまま
           } else {
             // 全部のQ2が終わったので、次のクエリセットへ
-            setTimeout(() => handleNext(), 200);
+            // 即座に遷移フラグを立てる
+            setIsTransitioning(true);
+
+            // 最新の回答を作成して渡す
+            const updatedAnswers = {
+              ...answers,
+              [currentCardIndex]: {
+                ...answers[currentCardIndex],
+                dominantInfo: value,
+              },
+            };
+            setTimeout(() => handleNext(updatedAnswers), 200);
           }
         }
       } else if (e.key === "ArrowUp") {
@@ -148,6 +329,7 @@ export default function SurveyContent() {
   }, [
     currentCardIndex,
     currentQuestion,
+    isTransitioning,
     handleNext,
     handleRelevanceChange,
     handleDominantInfoChange,
@@ -165,6 +347,42 @@ export default function SurveyContent() {
     return (
       <div className="h-screen bg-background flex items-center justify-center">
         <p className="text-lg">データが見つかりません</p>
+      </div>
+    );
+  }
+
+  // 全完了画面
+  if (isCompleted) {
+    return (
+      <div className="h-screen bg-background flex items-center justify-center p-4">
+        <div className="max-w-md w-full space-y-6">
+          <div className="text-center space-y-2">
+            <h1 className="text-3xl font-bold">お疲れ様でした！</h1>
+            <p className="text-muted-foreground">
+              全てのアンケートが完了しました
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="userId" className="text-lg">
+                ユーザーIDを入力してください
+              </Label>
+              <Input
+                id="userId"
+                type="text"
+                placeholder="例: 12345 または user@example.com"
+                value={userId}
+                onChange={(e) => setUserId(e.target.value)}
+                className="mt-2"
+              />
+            </div>
+
+            <Button onClick={handleFinalSave} className="w-full" size="lg">
+              保存する
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -191,7 +409,7 @@ export default function SurveyContent() {
               {"<"}
             </Button>
             <Button
-              onClick={handleNext}
+              onClick={() => handleNext()}
               size="sm"
               variant="outline"
               disabled={isLastQuery}

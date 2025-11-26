@@ -26,3 +26,14 @@ export interface Answer {
   relevance: number; // Q1: 1-5
   dominantInfo: number; // Q2: 1-5 (1: テキストのみ, 3: 1:1で統合, 5: 画像のみ)
 }
+
+export interface QuerySetResult {
+  querySetId: number;
+  q1Answers: number[]; // 5つの結果に対するQ1の回答
+  q2Answers: number[]; // 5つの結果に対するQ2の回答
+}
+
+export interface SurveyData {
+  timestamp: string;
+  querySets: QuerySetResult[];
+}
