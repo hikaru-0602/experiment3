@@ -4,13 +4,13 @@ import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import { QuerySet, Answer, Results } from "@/app/types/survey";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 
 export default function SurveyContent() {
   const [currentQueryIndex, setCurrentQueryIndex] = useState(0);
   const [currentCardIndex, setCurrentCardIndex] = useState(0); // 現在選択中のカード (0〜4)
+  const [currentQuestion, setCurrentQuestion] = useState<"Q1" | "Q2">("Q1"); // 現在回答中の質問
   const [allQuerySets, setAllQuerySets] = useState<QuerySet[]>([]);
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<Record<number, Answer>>({
@@ -43,6 +43,7 @@ export default function SurveyContent() {
     if (currentQueryIndex < allQuerySets.length - 1) {
       setCurrentQueryIndex((prev) => prev + 1);
       setCurrentCardIndex(0); // カードインデックスをリセット
+      setCurrentQuestion("Q1"); // Q1から開始
       // 回答をリセット
       setAnswers({
         0: { relevance: 0, dominantInfo: 0 },
@@ -62,6 +63,7 @@ export default function SurveyContent() {
     if (currentQueryIndex > 0) {
       setCurrentQueryIndex((prev) => prev - 1);
       setCurrentCardIndex(0); // カードインデックスをリセット
+      setCurrentQuestion("Q1"); // Q1から開始
       // 回答をリセット
       setAnswers({
         0: { relevance: 0, dominantInfo: 0 },
@@ -91,32 +93,65 @@ export default function SurveyContent() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 1〜5の数字キー
-      if (e.key >= "1" && e.key <= "5") {
+      if (e.key >= "1" && e.key <= "4") {
         const value = parseInt(e.key);
-        // 現在のカードに値を設定
-        handleRelevanceChange(currentCardIndex, value);
 
-        // 次のカードに進む、または次のクエリセットに進む
-        if (currentCardIndex < 4) {
-          setCurrentCardIndex((prev) => prev + 1);
+        if (currentQuestion === "Q1") {
+          // Q1に値を設定
+          handleRelevanceChange(currentCardIndex, value);
+
+          // 次のカードのQ1へ、または全部終わったらQ2の最初へ
+          if (currentCardIndex < 4) {
+            setCurrentCardIndex((prev) => prev + 1);
+            // Q1のまま
+          } else {
+            // 全部のQ1が終わったので、Q2の最初のカードへ
+            setCurrentCardIndex(0);
+            setCurrentQuestion("Q2");
+          }
         } else {
-          // 5つ目のカードの場合、次のクエリセットに進む
-          setTimeout(() => handleNext(), 200); // 少し遅延させて視覚的フィードバックを提供
+          // Q2に値を設定
+          handleDominantInfoChange(currentCardIndex, value);
+
+          // 次のカードのQ2へ、または次のクエリセットへ
+          if (currentCardIndex < 4) {
+            setCurrentCardIndex((prev) => prev + 1);
+            // Q2のまま
+          } else {
+            // 全部のQ2が終わったので、次のクエリセットへ
+            setTimeout(() => handleNext(), 200);
+          }
         }
       } else if (e.key === "ArrowUp") {
         if (currentCardIndex > 0) {
           setCurrentCardIndex((prev) => prev - 1);
+        } else if (currentCardIndex == 0) {
+          setCurrentCardIndex(4);
         }
       } else if (e.key === "ArrowDown") {
         if (currentCardIndex < 4) {
           setCurrentCardIndex((prev) => prev + 1);
+        } else if (currentCardIndex == 4) {
+          setCurrentCardIndex(0);
+        }
+      } else if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        if (currentQuestion == "Q1") {
+          setCurrentQuestion("Q2");
+        } else {
+          setCurrentQuestion("Q1");
         }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [currentCardIndex, handleNext, handleRelevanceChange]);
+  }, [
+    currentCardIndex,
+    currentQuestion,
+    handleNext,
+    handleRelevanceChange,
+    handleDominantInfoChange,
+  ]);
 
   if (loading) {
     return (
@@ -191,29 +226,37 @@ export default function SurveyContent() {
           {/* 検索結果と質問 */}
           <div className="w-[60%] flex flex-col gap-4">
             {/* ヘッダー行 */}
-            <div className="grid grid-cols-[2fr_1fr_1fr] gap-4 pb-2">
+            <div className="grid grid-cols-[2fr_1.5fr_1.5fr] gap-10 pb-2">
               <div className="font-medium text-lg"></div>
-              <div className="font-medium text-lg text-center">
+              <div
+                className={`text-lg text-center transition-all ${
+                  currentQuestion === "Q1"
+                    ? "font-bold text-foreground"
+                    : "font-normal text-muted-foreground"
+                }`}
+              >
                 Q1: クエリとどの程度一致していると思いますか？
               </div>
-              <div className="font-medium text-lg text-center">
+              <div
+                className={`text-lg text-center transition-all ${
+                  currentQuestion === "Q2"
+                    ? "font-bold text-foreground"
+                    : "font-normal text-muted-foreground"
+                }`}
+              >
                 Q2: どの割合で統合した結果だと思いますか？
               </div>
             </div>
 
             {/* データ行 */}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-6">
               {querySet.result.map((result, index) => {
                 const answer = answers[index];
 
                 return (
                   <div
                     key={index}
-                    className={`grid grid-cols-[2fr_1fr_1fr] gap-4 p-3 rounded-lg transition-all border-2 ${
-                      currentCardIndex === index
-                        ? "border-primary bg-primary/5"
-                        : "border-transparent"
-                    }`}
+                    className="grid grid-cols-[2fr_1.5fr_1.5fr] gap-10 p-3 transition-all"
                   >
                     {/* 結果情報 */}
                     <div className="flex items-center gap-3">
@@ -236,7 +279,13 @@ export default function SurveyContent() {
                     </div>
 
                     {/* Q1回答欄 */}
-                    <div className="flex flex-col items-center justify-center gap-2">
+                    <div
+                      className={`flex flex-col items-center justify-center gap-2 transition-all ${
+                        currentCardIndex === index && currentQuestion === "Q1"
+                          ? "opacity-100"
+                          : "opacity-30"
+                      }`}
+                    >
                       <RadioGroup
                         value={answer.relevance.toString()}
                         onValueChange={(value) =>
@@ -244,7 +293,7 @@ export default function SurveyContent() {
                         }
                       >
                         <div className="flex gap-3">
-                          {[1, 2, 3, 4, 5].map((value) => (
+                          {[1, 2, 3, 4].map((value) => (
                             <div
                               key={value}
                               className="flex flex-col items-center gap-1"
@@ -252,11 +301,11 @@ export default function SurveyContent() {
                               <RadioGroupItem
                                 value={value.toString()}
                                 id={`relevance-${index}-${value}`}
-                                className="size-5"
+                                className="size-5 pointer-events-none"
                               />
                               <Label
                                 htmlFor={`relevance-${index}-${value}`}
-                                className="text-xs cursor-pointer"
+                                className="text-xs pointer-events-none"
                               >
                                 {value}
                               </Label>
@@ -264,14 +313,20 @@ export default function SurveyContent() {
                           ))}
                         </div>
                       </RadioGroup>
-                      <div className="flex justify-between text-xs text-muted-foreground w-full px-1">
-                        <span>低</span>
-                        <span>高</span>
+                      <div className="flex justify-between text-ml text-muted-foreground w-full px-1">
+                        <span>全く</span>
+                        <span>かなり</span>
                       </div>
                     </div>
 
                     {/* Q2回答欄 */}
-                    <div className="flex flex-col items-center justify-center gap-2">
+                    <div
+                      className={`flex flex-col items-center justify-center gap-2 transition-all ${
+                        currentCardIndex === index && currentQuestion === "Q2"
+                          ? "opacity-100"
+                          : "opacity-30"
+                      }`}
+                    >
                       <RadioGroup
                         value={answer.dominantInfo.toString()}
                         onValueChange={(value) =>
@@ -287,11 +342,11 @@ export default function SurveyContent() {
                               <RadioGroupItem
                                 value={value.toString()}
                                 id={`dominant-${index}-${value}`}
-                                className="size-5"
+                                className="size-5 pointer-events-none"
                               />
                               <Label
                                 htmlFor={`dominant-${index}-${value}`}
-                                className="text-xs cursor-pointer"
+                                className="text-xs pointer-events-none"
                               >
                                 {value}
                               </Label>
@@ -299,7 +354,7 @@ export default function SurveyContent() {
                           ))}
                         </div>
                       </RadioGroup>
-                      <div className="flex justify-between text-xs text-muted-foreground w-full px-1">
+                      <div className="flex justify-between text-ml text-muted-foreground w-full px-1">
                         <span>テキスト</span>
                         <span>画像</span>
                       </div>
