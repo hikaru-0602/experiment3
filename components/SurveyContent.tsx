@@ -176,9 +176,6 @@ export default function SurveyContent() {
       // スプレッドシートにPOST
       const spreadsheetUrl = process.env.NEXT_PUBLIC_SPREADSHEET_URL;
 
-      console.log("=== スプレッドシート送信開始 ===");
-      console.log("URL:", spreadsheetUrl);
-
       if (spreadsheetUrl) {
         // Google Apps Scriptが期待する形式に変換
         const payload = {
@@ -188,9 +185,7 @@ export default function SurveyContent() {
           },
         };
 
-        console.log("送信データ:", JSON.stringify(payload, null, 2));
-
-        const response = await fetch(spreadsheetUrl, {
+        await fetch(spreadsheetUrl, {
           method: "POST",
           mode: "no-cors", // Google Apps Scriptの場合はno-corsが必要
           headers: {
@@ -198,12 +193,6 @@ export default function SurveyContent() {
           },
           body: JSON.stringify(payload),
         });
-
-        console.log("送信完了 - レスポンス:", response);
-        console.log("レスポンスステータス:", response.status);
-        console.log("レスポンスタイプ:", response.type);
-      } else {
-        console.warn("NEXT_PUBLIC_SPREADSHEET_URLが設定されていません");
       }
 
       // ローカルストレージにも保存（バックアップ）
