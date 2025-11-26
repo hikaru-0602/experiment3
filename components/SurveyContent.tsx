@@ -166,19 +166,62 @@ export default function SurveyContent() {
     }
   }, [currentQueryIndex]);
 
-  const handleFinalSave = useCallback(() => {
+  const handleFinalSave = useCallback(async () => {
     if (!userId.trim()) {
       alert("ユーザーIDを入力してください");
       return;
     }
 
-    // 最終保存
-    localStorage.setItem(`survey_${userId}`, JSON.stringify(surveyData));
+    try {
+      // スプレッドシートにPOST
+      const spreadsheetUrl = process.env.NEXT_PUBLIC_SPREADSHEET_URL;
 
-    // 未完了データを削除
-    localStorage.removeItem("survey_incomplete");
+      console.log("=== スプレッドシート送信開始 ===");
+      console.log("URL:", spreadsheetUrl);
 
-    alert("保存が完了しました！ご協力ありがとうございました。");
+      if (spreadsheetUrl) {
+        // Google Apps Scriptが期待する形式に変換
+        const payload = {
+          respondent_key: userId,
+          survey_data: {
+            querySets: surveyData.querySets,
+          },
+        };
+
+        console.log("送信データ:", JSON.stringify(payload, null, 2));
+
+        const response = await fetch(spreadsheetUrl, {
+          method: "POST",
+          mode: "no-cors", // Google Apps Scriptの場合はno-corsが必要
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        });
+
+        console.log("送信完了 - レスポンス:", response);
+        console.log("レスポンスステータス:", response.status);
+        console.log("レスポンスタイプ:", response.type);
+      } else {
+        console.warn("NEXT_PUBLIC_SPREADSHEET_URLが設定されていません");
+      }
+
+      // ローカルストレージにも保存（バックアップ）
+      localStorage.setItem(`survey_${userId}`, JSON.stringify(surveyData));
+
+      // 未完了データを削除
+      localStorage.removeItem("survey_incomplete");
+
+      alert("保存が完了しました！ご協力ありがとうございました。");
+    } catch (error) {
+      console.error("保存エラー:", error);
+
+      // エラーが発生してもローカルストレージには保存
+      localStorage.setItem(`survey_${userId}`, JSON.stringify(surveyData));
+      localStorage.removeItem("survey_incomplete");
+
+      alert("スプレッドシートへの送信に失敗しましたが、ローカルには保存されました。");
+    }
   }, [userId, surveyData]);
 
   // final_results.jsonを読み込む
